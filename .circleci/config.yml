@@ -23,7 +23,7 @@ jobs:
           command: sdkmanager "system-images;android-28;google_apis_playstore;x86_64" && echo "no" | avdmanager create avd -n test -k "system-images;android-28;google_apis_playstore;x86_64"
       - run:
           name: Launch emulator
-          command:  emulator -avd test -noaudio -no-boot-anim -no-window -accel on
+          command:  export LD_LIBRARY_PATH=/usr/lib64:/usr/lib && emulator -avd test -noaudio -no-boot-anim -no-window -accel on
           background: true
       - run:
           name: Wait emulator
