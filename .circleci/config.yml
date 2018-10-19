@@ -24,7 +24,7 @@ jobs:
       - run:
           name: Launch emulator
           command:  export LD_LIBRARY_PATH=${ANDROID_HOME}/emulator/lib32:${ANDROID_HOME}/emulator/lib32/qt/lib && emulator32-arm -avd test -noaudio -no-boot-anim -no-window -accel on
-                                    background: true
+          background: true
       - run:
           name: Wait emulator
           command: |
