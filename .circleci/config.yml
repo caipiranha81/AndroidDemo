@@ -1,67 +1,43 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/code/AndroidDemo
+    #working_directory: /home/circleci/
     docker:
+      # Android the primary container
       - image: circleci/android:api-27-alpha
     environment:
       JVM_OPTS: -Xmx3200m
     steps:
       - checkout
-
+      #- run: ls -al /home/circleci/project/AndroidDemo/app
       - restore_cache:
-          key: jars-{{ checksum "build.gradle" }}-{{ checksum "app/build.gradle" }}
-      - run:
-          name: Check the project dir
-          command: echo $PWD
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "home/circleci/project/app/build.gradle" }}
       - run:
           name: Download Dependencies
-          command: ./gradlew androidDependencies
+          command: ./gradlew dependencies
       - save_cache:
           paths:
             - ~/.gradle
-          key: jars-{{ checksum "build.gradle" }}-{{ checksum "app/build.gradle" }}
-
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
+      #- run:
+          #name: Setup emulator
+          #command: sdkmanager "system-images;android-25;google_apis;arm64-v8a" && echo "no" | avdmanager create avd -n test -k "system-images;android-25;google_apis;arm64-v8a"
+      #- run:
+          #name: Launch emulator
+          #command:  export LD_LIBRARY_PATH=${ANDROID_HOME}/emulator/lib64:${ANDROID_HOME}/emulator/lib64/qt/lib && emulator64-arm -avd test -noaudio -no-boot-anim -no-window -accel auto -verbose
+          #background: true
+      #- run:
+          #name: Wait emulator
+          #command: |
+            # wait for it to have booted
+            #circle-android wait-for-boot
+            #unlock the emulator screen
+            #sleep 30
+            #adb shell input keyevent 82
       - run:
-          name: Build debug APK and release APK
-          command: |
-            ./gradlew :app:assembleDebug
-            ./gradlew :app:assembleDebugAndroidTest
-      - run:
-          name: Store Google Service Account
-          command: echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
-
-      - run:
-          name: Authorize gcloud and set config defaults
-          command: |
-            gcloud auth activate-service-account  --key-file=${HOME}/gcloud-service-key.json
-            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
-
-      - run:
-          name: Install Crmod dependency
-          command: sudo pip install -U crcmod
-
-      - run:
-          name: Test with Firebase Test Lab
-          command:  >
-            gcloud firebase test android run --type instrumentation \
-              --app $PWD/app/build/outputs/apk/debug/app-debug.apk \
-              --test $PWD/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
-              --device model=walleye,version=27,locale=en_US,orientation=portrait \
-              --environment-variables coverage=true,coverageFile=/sdcard/tmp/code-coverage/connected/coverage.ec \
-              --directories-to-pull=/sdcard/tmp --timeout 20m
-      - run:
-          name: Create directory to store test results
-          command: mkdir firebase
-
-      - run:
-          name: Download testdata from Test-Lab
-          command:
-            gsutil -m cp -r -U "`gsutil ls gs://$FIREBASE_TEST_LAB | tail -1`*"  firebase ||true
-
+          name: Run EspressoTests
+          command: ./gradlew home/circleci/project/app/connectedAndroidTest
       - store_artifacts:
-          path: /home/circleci/code/AndroidDemo/firebase
-          destination: /firebase/
-
+          path: app/build/outputs/apk
       - store_test_results:
-          path: firebase
+          path: app/build/test-results
